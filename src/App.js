@@ -1,15 +1,29 @@
 import './App.css';
 
 import React from "react";
-import { Grid, Typography, Paper } from "@mui/material";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { Grid, Paper, Button } from "@mui/material";
+import { BrowserRouter as Router, Route, Routes, useNavigate } from "react-router-dom";
 
 import TopBar from "./components/TopBar";
 import UserDetail from "./components/UserDetail";
 import UserList from "./components/UserList";
 import UserPhotos from "./components/UserPhotos";
 
-const App = (props) => {
+const NavigateButton = () => {
+  const navigate = useNavigate();
+  return (
+    <Button 
+      variant="contained" 
+      color="primary" 
+      onClick={() => navigate('/users')}
+      style={{ position: 'absolute', bottom: '30px', left: '30px' }}
+    >
+      Show User List
+    </Button>
+  );
+}
+
+const App = () => {
   return (
       <Router>
         <div>
@@ -18,6 +32,9 @@ const App = (props) => {
               <TopBar />
             </Grid>
             <div className="main-topbar-buffer" />
+            <Grid item xs={12}>
+              <NavigateButton />
+            </Grid>
             <Grid item sm={3}>
               <Paper className="main-grid-item">
                 <UserList />

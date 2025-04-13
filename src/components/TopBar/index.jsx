@@ -13,7 +13,13 @@ function TopBar() {
   const params = useParams();
   
   const getContextText = () => {
-    if (!params.userId) return "";
+    if (!params.userId) {
+      if (location.pathname === "/" || location.pathname === "/users") {
+        return "User List";
+      }
+      return "";
+    }
+    console.log("params.userId", params.userId);
     const user = models.userModel(params.userId);
     if (!user) return "";
     
@@ -29,7 +35,7 @@ function TopBar() {
     <AppBar className="topbar-appBar" position="absolute">
       <Toolbar className="topbar-toolbar">
         <Typography variant="h5" className="topbar-title" color="inherit">
-          Photo Sharing 
+          Tạ Cao Sơn
         </Typography>
         <Typography variant="h6" className="topbar-context" color="inherit">
           {getContextText()}
