@@ -1,35 +1,36 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { AppBar, Toolbar, Typography } from "@mui/material";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import models from "../../modelData/models";
 
 import "./styles.css";
 
-/**
- * Define TopBar, a React component of Project 4.
- */
 function TopBar() {
   const location = useLocation();
-  const params = useParams();
-  
-  const getContextText = () => {
-    if (!params.userId) {
-      if (location.pathname === "/" || location.pathname === "/users") {
-        return "User List";
+  const [contextText, setContextText] = useState("");
+
+  useEffect(() => {
+    const pathParts = location.pathname.split("/");
+    const userId = pathParts[pathParts.length - 1];
+
+    if (pathParts.includes("photos")) {
+      const user = models.userModel(userId);
+      if (user) {
+        setContextText(`Photos of ${user.first_name} ${user.last_name}`);
+      } else {
+        setContextText("");
       }
-      return "";
+    } else if (pathParts.includes("users")) {
+      const user = models.userModel(userId);
+      if (user) {
+        setContextText(`${user.first_name} ${user.last_name}`);
+      } else {
+        setContextText("");
+      }
+    } else {
+      setContextText("User List");
     }
-    console.log("params.userId", params.userId);
-    const user = models.userModel(params.userId);
-    if (!user) return "";
-    
-    if (location.pathname.includes("/photos/")) {
-      return `Photos of ${user.first_name} ${user.last_name}`;
-    } else if (location.pathname.includes("/users/")) {
-      return `${user.first_name} ${user.last_name}`;
-    }
-    return "";
-  };
+  }, [location]);
 
   return (
     <AppBar className="topbar-appBar" position="absolute">
@@ -38,7 +39,7 @@ function TopBar() {
           Tạ Cao Sơn
         </Typography>
         <Typography variant="h6" className="topbar-context" color="inherit">
-          {getContextText()}
+          {contextText}
         </Typography>
       </Toolbar>
     </AppBar>
