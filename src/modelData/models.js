@@ -1,5 +1,3 @@
-"use strict";
-
 /**
  * Model data for Project 4 - the photo sharing site.
  * This module returns an object called models with the following
@@ -102,7 +100,7 @@ const jo = {
   first_name: "John",
   last_name: "Ousterhout",
   location: "Stanford, CA",
-  description: "<i>CS142!</i>",
+  description: "IT",
   occupation: "Professor",
 };
 
