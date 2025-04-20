@@ -1,6 +1,6 @@
 import './App.css';
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Grid, Paper, Button } from "@mui/material";
 import { BrowserRouter as Router, Route, Routes, useNavigate } from "react-router-dom";
 
@@ -8,6 +8,7 @@ import TopBar from "./components/TopBar";
 import UserDetail from "./components/UserDetail";
 import UserList from "./components/UserList";
 import UserPhotos from "./components/UserPhotos";
+import SinglePhotoViewer from "./components/UserPhotos/SinglePhotoViewer";
 
 const NavigateButton = () => {
   const navigate = useNavigate();
@@ -24,6 +25,23 @@ const NavigateButton = () => {
 }
 
 const App = () => {
+  const [advancedFeatures, setAdvancedFeatures] = useState(false);
+
+  useEffect(() => {
+    // Listen for changes in advanced features from TopBar
+    const handleStorageChange = () => {
+      const storedValue = localStorage.getItem('advancedFeatures');
+      setAdvancedFeatures(storedValue === 'true');
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    handleStorageChange(); // Initial check
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
   return (
       <Router>
         <div>
@@ -50,6 +68,10 @@ const App = () => {
                   <Route
                       path="/photos/:userId"
                       element = {<UserPhotos />}
+                  />
+                  <Route
+                      path="/photos/:userId/:photoId"
+                      element = {<SinglePhotoViewer />}
                   />
                   <Route path="/users" element={<UserList />} />
                 </Routes>

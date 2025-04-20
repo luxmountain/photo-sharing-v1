@@ -5,6 +5,8 @@
 }
 
 .topbar-toolbar {
+  position: relative;
+  height: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -12,12 +14,21 @@
 }
 
 .topbar-title {
+  position: absolute;
+  left: 20px;
   font-weight: 500;
 }
 
 .topbar-context {
+  position: absolute;
+  right: 20px;
   font-weight: 400;
   opacity: 0.9;
   text-align: right;
-  margin-left: 24px;
+}
+
+.topbar-advanced-features {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
