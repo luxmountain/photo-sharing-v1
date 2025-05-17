@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Typography, Card, CardContent, Button } from "@mui/material";
 import { Link, useParams } from "react-router-dom";
 import models from "../../modelData/models";
@@ -6,10 +6,29 @@ import "./styles.css";
 
 function UserDetail() {
   const { userId } = useParams();
-  const user = models.userModel(userId);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const data = await models.userModel(userId);
+        if (data) {
+          setUser(data);
+        } else {
+          console.error("User not found for ID:", userId);
+        }
+      } catch (err) {
+        console.error("Error fetching user:", err);
+      }
+    }
+
+    if (userId) {
+      fetchUser();
+    }
+  }, [userId]);
 
   if (!user) {
-    return <Typography variant="h4">User not found</Typography>;
+    return <Typography variant="h4">Loading user...</Typography>;
   }
 
   return (
