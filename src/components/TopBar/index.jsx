@@ -13,19 +13,20 @@ function TopBar() {
     return stored === 'true';
   });
 
-  useEffect(() => {
+useEffect(() => {
+  async function fetchUser() {
     const pathParts = location.pathname.split("/");
     const userId = pathParts[pathParts.length - 1];
 
     if (pathParts.includes("photos")) {
-      const user = models.userModel(userId);
+      const user = await models.userModel(userId);
       if (user) {
         setContextText(`Photos of ${user.first_name} ${user.last_name}`);
       } else {
         setContextText("");
       }
     } else if (pathParts.includes("users")) {
-      const user = models.userModel(userId);
+      const user = await models.userModel(userId);
       if (user) {
         setContextText(`${user.first_name} ${user.last_name}`);
       } else {
@@ -34,7 +35,11 @@ function TopBar() {
     } else {
       setContextText("User List");
     }
-  }, [location]);
+  }
+
+  fetchUser();
+}, [location]);
+
 
   const handleAdvancedFeaturesChange = (event) => {
     const newValue = event.target.checked;
