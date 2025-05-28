@@ -7,35 +7,53 @@ import {
   Link,
   IconButton,
   Box,
-  Paper
+  Paper,
+  TextField,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  Divider
 } from "@mui/material";
 import { Link as RouterLink, useParams, useNavigate } from "react-router-dom";
 import { ArrowBack, ArrowForward } from "@mui/icons-material";
+import { useAuth } from "../../contexts/AuthContext";
 import models from "../../modelData/models";
 import "./styles.css";
 
 function SinglePhotoViewer() {
   const { userId, photoId } = useParams();
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-  
-  const user = models.userModel(userId);
-  const photos = models.photoOfUserModel(userId);
+  const [newComment, setNewComment] = useState("");
+  const [error, setError] = useState("");
+  const [photos, setPhotos] = useState(null);
+  const [user, setUser] = useState(null);
   
   useEffect(() => {
-    if (photoId && photos) {
-      const index = photos.findIndex(photo => photo._id === photoId);
-      if (index !== -1) {
-        setCurrentPhotoIndex(index);
+    const loadData = async () => {
+      const userData = await models.userModel(userId);
+      const photosData = await models.photoOfUserModel(userId);
+      setUser(userData);
+      setPhotos(photosData);
+      
+      if (photoId && photosData) {
+        const index = photosData.findIndex(photo => photo._id === photoId);
+        if (index !== -1) {
+          setCurrentPhotoIndex(index);
+        }
       }
-    }
-  }, [photoId, photos]);
+    };
+    loadData();
+  }, [userId, photoId]);
 
   if (!user || !photos || photos.length === 0) {
     return <Typography variant="h4">Photos not found</Typography>;
   }
 
   const currentPhoto = photos[currentPhotoIndex];
+
   const formatDate = (dateStr) => {
     return new Date(dateStr).toLocaleString('en-US', {
       year: 'numeric',
@@ -49,7 +67,6 @@ function SinglePhotoViewer() {
   const handlePrevious = () => {
     if (currentPhotoIndex > 0) {
       const newIndex = currentPhotoIndex - 1;
-      setCurrentPhotoIndex(newIndex);
       navigate(`/photos/${userId}/${photos[newIndex]._id}`);
     }
   };
@@ -57,73 +74,133 @@ function SinglePhotoViewer() {
   const handleNext = () => {
     if (currentPhotoIndex < photos.length - 1) {
       const newIndex = currentPhotoIndex + 1;
-      setCurrentPhotoIndex(newIndex);
       navigate(`/photos/${userId}/${photos[newIndex]._id}`);
     }
   };
 
-  return (
-    <Box className="single-photo-container">
-      <Paper elevation={3} className="photo-navigation">
-        <IconButton 
-          onClick={handlePrevious}
-          disabled={currentPhotoIndex === 0}
-          color="primary"
-          size="large"
-        >
-          <ArrowBack />
-        </IconButton>
-        <Typography variant="h6">
-          Photo {currentPhotoIndex + 1} of {photos.length}
-        </Typography>
-        <IconButton 
-          onClick={handleNext}
-          disabled={currentPhotoIndex === photos.length - 1}
-          color="primary"
-          size="large"
-        >
-          <ArrowForward />
-        </IconButton>
-      </Paper>
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) {
+      setError("Comment cannot be empty");
+      return;
+    }
 
-      <Card className="photo-card">
-        <CardMedia
-          component="img"
-          image={`/images/${currentPhoto.file_name}`}
-          alt={`Photo by ${user.first_name}`}
-          className="photo-image"
-        />
-        <CardContent>
+    try {
+      await models.addCommentToPhoto(currentPhoto._id, newComment.trim());
+      // Update the photos list to include the new comment
+      const updatedPhotos = [...photos];
+      const updatedPhoto = {
+        ...currentPhoto,
+        comments: [
+          ...currentPhoto.comments,
+          {
+            comment: newComment.trim(),
+            date_time: new Date().toISOString(),
+            user: {
+              _id: currentUser._id,
+              first_name: currentUser.first_name,
+              last_name: currentUser.last_name
+            }
+          }
+        ]
+      };
+      updatedPhotos[currentPhotoIndex] = updatedPhoto;
+      setPhotos(updatedPhotos);
+      setNewComment("");
+      setError("");
+    } catch (error) {
+      setError("Failed to add comment. Please try again.");
+    }
+  };
+
+  return (
+    <Card>
+      <CardMedia
+        component="img"
+        image={`/images/${currentPhoto.file_name}`}
+        alt={`Photo by ${user.first_name} ${user.last_name}`}
+        style={{ maxHeight: '500px', objectFit: 'contain' }}
+      />
+      <CardContent>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <IconButton onClick={handlePrevious} disabled={currentPhotoIndex === 0}>
+            <ArrowBack />
+          </IconButton>
           <Typography variant="body2" color="textSecondary">
             Posted on {formatDate(currentPhoto.date_time)}
           </Typography>
-          <div className="comment-section">
-            <Typography variant="h6" gutterBottom>
-              Comments
-            </Typography>
-            {currentPhoto.comments && currentPhoto.comments.map((comment) => (
-              <Card key={comment._id} className="comment-card">
-                <Typography variant="body2" color="textSecondary">
-                  {formatDate(comment.date_time)} - 
-                  <Link
-                    component={RouterLink}
-                    to={`/users/${comment.user._id}`}
-                    color="primary"
-                    sx={{ ml: 1 }}
-                  >
-                    {comment.user.first_name} {comment.user.last_name}
-                  </Link>
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 1 }}>
-                  {comment.comment}
-                </Typography>
-              </Card>
+          <IconButton 
+            onClick={handleNext} 
+            disabled={currentPhotoIndex === photos.length - 1}
+          >
+            <ArrowForward />
+          </IconButton>
+        </Box>
+
+        <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 2 }}>
+          <Typography variant="h6" gutterBottom>Comments</Typography>
+          
+          <form onSubmit={handleAddComment}>
+            <Box sx={{ mb: 2 }}>
+              <TextField
+                fullWidth
+                multiline
+                rows={2}
+                variant="outlined"
+                placeholder="Add a comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                error={!!error}
+                helperText={error}
+              />
+              <Box sx={{ mt: 1 }}>
+                <Button 
+                  type="submit" 
+                  variant="contained" 
+                  color="primary"
+                  disabled={!newComment.trim()}
+                >
+                  Add Comment
+                </Button>
+              </Box>
+            </Box>
+          </form>
+
+          <List>
+            {currentPhoto.comments?.map((comment, index) => (
+              <React.Fragment key={index}>
+                <ListItem alignItems="flex-start">
+                  <ListItemText
+                    primary={
+                      <Link 
+                        component={RouterLink} 
+                        to={`/users/${comment.user._id}`}
+                        color="primary"
+                      >
+                        {comment.user.first_name} {comment.user.last_name}
+                      </Link>
+                    }
+                    secondary={
+                      <>
+                        <Typography component="span" variant="body2" color="textPrimary">
+                          {comment.comment}
+                        </Typography>
+                        <br />
+                        <Typography component="span" variant="caption" color="textSecondary">
+                          {formatDate(comment.date_time)}
+                        </Typography>
+                      </>
+                    }
+                  />
+                </ListItem>
+                {index < currentPhoto.comments.length - 1 && <Divider />}
+              </React.Fragment>
             ))}
-          </div>
-        </CardContent>
-      </Card>
-    </Box>
+          </List>
+        </Paper>
+      </CardContent>
+    </Card>
   );
 }
 
-export default SinglePhotoViewer; 
+export default SinglePhotoViewer;
