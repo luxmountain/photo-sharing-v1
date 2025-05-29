@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  Paper, 
-  TextField, 
-  Button, 
-  Typography, 
-  Box, 
-  Divider, 
-  Alert, 
+import {
+  Paper,
+  TextField,
+  Button,
+  Typography,
+  Box,
+  Alert,
   IconButton,
   InputAdornment
 } from '@mui/material';
@@ -18,7 +17,7 @@ function LoginRegister() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
 
   // Login form state
@@ -50,8 +49,8 @@ function LoginRegister() {
       setLoginError('Please enter both login name and password');
       return;
     }
-
     const result = await login(loginForm.loginName, loginForm.password);
+    console.log(result);
     if (result.success) {
       navigate('/users');
     } else {
@@ -64,53 +63,43 @@ function LoginRegister() {
     setRegisterError('');
     setRegisterSuccess('');
 
-    // Validation
     if (registerForm.password !== registerForm.confirmPassword) {
       setRegisterError('Passwords do not match');
       return;
     }
 
-    if (!registerForm.loginName || !registerForm.password || 
-        !registerForm.firstName || !registerForm.lastName) {
+    if (
+      !registerForm.loginName || !registerForm.password ||
+      !registerForm.firstName || !registerForm.lastName
+    ) {
       setRegisterError('Login name, password, first name, and last name are required');
       return;
     }
 
-    try {
-      const response = await fetch('/api/user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          login_name: registerForm.loginName,
-          password: registerForm.password,
-          first_name: registerForm.firstName,
-          last_name: registerForm.lastName,
-          location: registerForm.location,
-          description: registerForm.description,
-          occupation: registerForm.occupation
-        }),
-      });
+    const result = await register({
+      login_name: registerForm.loginName,
+      password: registerForm.password,
+      first_name: registerForm.firstName,
+      last_name: registerForm.lastName,
+      location: registerForm.location,
+      description: registerForm.description,
+      occupation: registerForm.occupation
+    });
 
-      if (response.ok) {
-        setRegisterSuccess('Registration successful! You can now log in.');
-        setRegisterForm({
-          loginName: '',
-          password: '',
-          confirmPassword: '',
-          firstName: '',
-          lastName: '',
-          location: '',
-          description: '',
-          occupation: ''
-        });
-      } else {
-        const error = await response.text();
-        setRegisterError(error || 'Registration failed');
-      }
-    } catch (error) {
-      setRegisterError('Registration failed. Please try again.');
+    if (result.success) {
+      setRegisterSuccess('Registration successful! You can now log in.');
+      setRegisterForm({
+        loginName: '',
+        password: '',
+        confirmPassword: '',
+        firstName: '',
+        lastName: '',
+        location: '',
+        description: '',
+        occupation: ''
+      });
+    } else {
+      setRegisterError(result.error || 'Registration failed');
     }
   };
 
@@ -135,7 +124,7 @@ function LoginRegister() {
           <Typography variant="h5" component="h1" gutterBottom>
             {isLogin ? 'Login' : 'Register'}
           </Typography>
-          <Button 
+          <Button
             onClick={() => {
               setIsLogin(!isLogin);
               setLoginError('');
@@ -191,7 +180,7 @@ function LoginRegister() {
           <form onSubmit={handleRegisterSubmit}>
             {registerError && <Alert severity="error" sx={{ mb: 2 }}>{registerError}</Alert>}
             {registerSuccess && <Alert severity="success" sx={{ mb: 2 }}>{registerSuccess}</Alert>}
-            
+
             <TextField
               fullWidth
               required

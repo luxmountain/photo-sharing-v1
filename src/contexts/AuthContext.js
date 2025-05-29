@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useCallback } from 'react';
-import axios from 'axios';
+import models from '../modelData/models';
 
 const AuthContext = createContext();
 
@@ -8,27 +8,28 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (loginName, password) => {
     try {
-      const response = await axios.post('/admin/login', { 
-        login_name: loginName,
-        password: password
-      });
-      setCurrentUser(response.data);
+      const userData = await models.login(loginName, password);
+      if (!userData) {
+        return { success: false, error: 'Invalid login name or password' };
+      }
+      setCurrentUser(userData);
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.status === 400 
-          ? 'Invalid login name or password' 
-          : 'An error occurred during login' 
+      return {
+        success: false,
+        error: error.message || 'An error occurred during login'
       };
     }
   }, []);
 
   const logout = useCallback(async () => {
     try {
-      await axios.post('/admin/logout');
-      setCurrentUser(null);
-      return { success: true };
+      const result = await models.logout();
+      if (result?.success) {
+        setCurrentUser(null);
+        return { success: true };
+      }
+      return { success: false, error: 'Logout failed' };
     } catch (error) {
       return { success: false, error: 'Failed to logout' };
     }
@@ -36,12 +37,13 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(async (userData) => {
     try {
-      const response = await axios.post('/api/user', userData);
-      return { success: true, data: response.data };
+      const response = await models.register(userData);
+      if (!response) throw new Error('Registration failed');
+      return { success: true, data: response };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data || 'Registration failed' 
+      return {
+        success: false,
+        error: error.message || 'Registration failed'
       };
     }
   }, []);
